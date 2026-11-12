@@ -1,0 +1,27 @@
+{
+  "id": "flux2",
+  "name": "FLUX.2 Klein 4B",
+  "purpose": "Geração e edição de imagens.",
+  "inputs": [
+    "texto",
+    "uma ou mais imagens de referência, conforme variante/workflow"
+  ],
+  "outputs": [
+    "imagem"
+  ],
+  "supported_tasks": [
+    "texto para imagem",
+    "edição de imagem com instruções textuais e referência visual",
+    "edição com múltiplas referências quando suportado pela variante"
+  ],
+  "unsupported_or_unconfirmed": [
+    "não é gerador nativo de áudio ou vídeo",
+    "não aceitar WAV como condicionamento de imagem sem workflow externo documentado"
+  ],
+  "prompt_guidance": [
+    "descrever sujeito, composição, cenário, iluminação, estilo e detalhes visuais",
+    "para edição, declarar claramente o que deve mudar e o que deve permanecer"
+  ],
+  "source": "Repositório oficial Black Forest Labs FLUX.2 consultado em 2026-11-11",
+  "license_note": "FLUX.2 Klein 4B está sob Apache-2.0 segundo o repositório oficial; outras variantes têm licenças diferentes. Conferir a variante exata."
+}

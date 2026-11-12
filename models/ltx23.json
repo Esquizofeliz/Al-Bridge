@@ -1,0 +1,34 @@
+{
+  "id": "ltx23",
+  "name": "LTX-2.3",
+  "purpose": "Geração de vídeo com áudio integrado e workflows especializados.",
+  "inputs": [
+    "texto",
+    "imagem de referência em workflows image-to-video",
+    "vídeo em workflows especializados"
+  ],
+  "outputs": [
+    "vídeo",
+    "áudio sincronizado em geração conjunta ou workflows de áudio específicos"
+  ],
+  "supported_tasks": [
+    "texto para vídeo com áudio gerado",
+    "imagem e texto para vídeo",
+    "vídeo sem áudio mais descrição para Foley em workflow compatível",
+    "vídeo mais diálogo escrito para Dub-It, com restrições documentadas"
+  ],
+  "unsupported_or_unconfirmed": [
+    "não presumir condicionamento de geração de vídeo por WAV arbitrário externo na instalação local LTX-2.3",
+    "não presumir que KugelAudio WAV seja entrada direta do Dub-It",
+    "não prometer lip-sync de uma faixa externa apenas por descrevê-la no prompt",
+    "Dub-It validado para inglês, francês, espanhol, alemão e russo; não assumir português"
+  ],
+  "prompt_guidance": [
+    "descrever sujeito, ambiente, ação e evolução temporal",
+    "indicar enquadramento e movimento de câmera",
+    "descrever áudio/ambiente quando o workflow gerar áudio",
+    "diálogo deve ser explicitamente identificado; confirmar idioma suportado no workflow"
+  ],
+  "source": "Documentação oficial Lightricks LTX-2.3 e ComfyUI-LTXVideo consultadas em 2026-11-11",
+  "license_note": "Pesos LTX-2.3 sob LTX-2 Community License; código do repositório LTX-2 sob Apache-2.0. Verificar os termos atuais."
+}

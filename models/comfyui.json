@@ -1,0 +1,25 @@
+{
+  "id": "comfyui",
+  "name": "ComfyUI",
+  "purpose": "Interface e motor de workflows em nós; não é, por si só, um modelo gerador.",
+  "inputs": [
+    "workflows em JSON e entradas exigidas pelos nós instalados"
+  ],
+  "outputs": [
+    "resultados definidos pelo workflow executado"
+  ],
+  "supported_tasks": [
+    "descrever e preparar prompts para workflows e nós conhecidos",
+    "consultar capacidades de nós quando documentadas"
+  ],
+  "unsupported_or_unconfirmed": [
+    "esta versão do Bridge não envia workflows nem chama a API do ComfyUI",
+    "não presumir que um nó customizado esteja instalado"
+  ],
+  "prompt_guidance": [
+    "identificar o workflow e os nós concretos antes de afirmar compatibilidade",
+    "se o workflow não estiver cadastrado, marcar como não verificado"
+  ],
+  "source": "Repositório oficial Comfy-Org/ComfyUI consultado em 2026-11-11",
+  "license_note": "ComfyUI publicado sob GPL-3.0; nós e modelos adicionais podem ter licenças próprias."
+}
