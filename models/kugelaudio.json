@@ -2,26 +2,11 @@
   "id": "kugelaudio",
   "name": "KugelAudio Open",
   "purpose": "Síntese de fala a partir de texto.",
-  "inputs": [
-    "texto",
-    "seleção de voz pré-codificada disponível no modelo"
-  ],
-  "outputs": [
-    "áudio de fala"
-  ],
-  "supported_tasks": [
-    "texto para fala em idiomas listados pelo projeto, incluindo português"
-  ],
-  "unsupported_or_unconfirmed": [
-    "não tratar a versão pública como clonagem livre a partir de qualquer arquivo WAV",
-    "não presumir entrada de vídeo ou imagem",
-    "não prometer prosódia nativa perfeita em português; qualidade deve ser testada"
-  ],
-  "prompt_guidance": [
-    "usar texto pontuado naturalmente",
-    "escrever números e siglas de forma amigável ao TTS quando necessário",
-    "evitar instruções visuais ou de câmera, pois não são relevantes para TTS"
-  ],
-  "source": "Repositório e model card oficiais KugelAudio Open consultados em 2026-11-11",
-  "license_note": "Código do repositório publicado sob MIT; conferir licença e termos do checkpoint específico."
+  "inputs": ["texto", "voz pré-codificada disponível no checkpoint"],
+  "outputs": ["áudio de fala"],
+  "supported_tasks": ["texto para fala nos idiomas listados pelo projeto, incluindo português (qualidade variável)"],
+  "unsupported_or_unconfirmed": ["clonagem a partir de áudio bruto não suportada nesta versão open-source", "não recebe imagem ou vídeo como entrada", "não prometer prosódia perfeita em português"],
+  "prompt_guidance": ["usar texto natural e pontuação expressiva", "esclarecer números e siglas quando a pronúncia importar", "usar apenas nomes de voz realmente disponíveis"],
+  "source": "https://github.com/Kugelaudio/kugelaudio-open — consultado em 2026-11-12",
+  "license_note": "O repositório declara MIT; conferir separadamente licença dos pesos e dependências."
 }

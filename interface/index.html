@@ -9,15 +9,16 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,sans-serif}
 main{max-width:920px;margin:38px auto;padding:0 18px}.brand{font-size:clamp(1.7rem,4vw,2.5rem);margin:0}.sub{color:var(--muted);margin:4px 0 24px}
 .panel,.result{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;margin:16px 0}
-label{display:block;font-weight:650;margin-bottom:8px}textarea,select{width:100%;background:#0f141c;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:13px;font:inherit}
-textarea{min-height:150px;resize:vertical}select{margin-bottom:15px}
+label{display:block;font-weight:650;margin:12px 0 8px}textarea,select{width:100%;background:#0f141c;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:13px;font:inherit}
+textarea{min-height:150px;resize:vertical}select{margin-bottom:8px}
+input[type=file]{display:block;width:100%;padding:12px;border:1px dashed var(--line);border-radius:10px;background:#0f141c;color:var(--text)}
 button{border:0;border-radius:10px;background:var(--accent);color:#09221d;font-weight:750;padding:12px 18px;font:inherit;cursor:pointer}
 button:disabled{opacity:.5;cursor:wait}.hint,.muted{color:var(--muted);font-size:.92rem}
-#status{margin-left:12px;color:var(--muted)}.result h2{font-size:1.1rem;margin:0 0 8px}.section{padding:14px 0;border-top:1px solid var(--line)}.section:first-child{border:0}
+#status{margin-left:12px;color:var(--muted)}.result h2{font-size:1.1rem;margin:0 0 8px}.section{padding:14px 0;border-top:1px solid var(--line)}
 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0e131a;border:1px solid var(--line);border-radius:9px;padding:13px;font:14px/1.5 ui-monospace,monospace}
 .copy{float:right;background:#344a55;color:white;padding:6px 10px;font-size:.85rem}
 ul{margin:6px 0;padding-left:22px}.badge{display:inline-block;padding:3px 9px;border-radius:99px;background:#263d3b;color:#a7f0dc;font-size:.85rem}
-#error{color:#ffb4a9}.footer{color:var(--muted);font-size:.85rem;margin:25px 0}
+#error{color:#ffb4a9}.footer{color:var(--muted);font-size:.85rem;margin:25px 0}#preview{max-width:220px;max-height:180px;display:none;margin-top:10px;border-radius:8px}
 </style>
 </head>
 <body><main>
@@ -27,8 +28,11 @@ ul{margin:6px 0;padding-left:22px}.badge{display:inline-block;padding:3px 9px;bo
 <label for="tool">Ferramenta desejada</label>
 <select id="tool"><option value="">Escolher automaticamente</option></select>
 <label for="request">O que você quer criar?</label>
-<textarea id="request" maxlength="12000" placeholder="Ex.: Quero uma cena cinematográfica da Aerith, de Final Fantasy VII Remake, caminhando por Tóquio à noite, sob chuva, com expressão melancólica..."></textarea>
-<p class="hint">Somente texto nesta versão. Não envie arquivos. O pedido é enviado ao endpoint local configurado.</p>
+<textarea id="request" maxlength="12000" placeholder="Ex.: Quero uma cena cinematográfica de uma personagem caminhando por Tóquio à noite, sob chuva..."></textarea>
+<label for="reference">Imagem de referência (opcional)</label>
+<input id="reference" type="file" accept="image/png,image/jpeg,image/webp">
+<img id="preview" alt="Prévia da imagem de referência">
+<p class="hint">A imagem será analisada pelo Ollama local, se o modelo tiver visão. Ela não será enviada ao FLUX ou ao ComfyUI. Você deverá anexá-la manualmente ao gerador. PNG, JPEG ou WEBP; até 6 MB.</p>
 <button id="go">Preparar meu prompt</button><span id="status" role="status"></span>
 <p id="error" aria-live="polite"></p>
 </div>
@@ -37,24 +41,37 @@ ul{margin:6px 0;padding-left:22px}.badge{display:inline-block;padding:3px 9px;bo
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function list(items){return Array.isArray(items)&&items.length?`<ul>${items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"<p class='muted'>Nenhum item informado.</p>"}
-function block(title,value,copy=false){return `<div class="section"><h2>${esc(title)} ${copy&&value?`<button class="copy" data-copy="${encodeURIComponent(value)}">Copiar</button>`:""}</h2>${value?`<pre>${esc(value)}</pre>`:"<p class='muted'>Não aplicável.</p>"}</div>`}
-async function init(){try{const r=await fetch("/api/catalog");const items=await r.json();for(const item of items){const opt=document.createElement("option");opt.value=item.name;opt.textContent=item.name;$("tool").appendChild(opt)} }catch(e){}}
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;',"'":"&#39;"}[c]));
+function list(items){return Array.isArray(items)&&items.length?'<ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>':"<p class='muted'>Nenhum item informado.</p>"}
+function block(title,value,copy=false){return '<div class="section"><h2>'+esc(title)+(copy&&value?'<button class="copy" data-copy="'+encodeURIComponent(value)+'">Copiar</button>':"")+'</h2>'+(value?'<pre>'+esc(value)+'</pre>':"<p class='muted'>Não aplicável.</p>")+'</div>'}
+async function init(){try{const r=await fetch("/api/catalog");const items=await r.json();for(const item of items){const opt=document.createElement("option");opt.value=item.id;opt.textContent=item.name; $("tool").appendChild(opt)}}catch(e){}}
+let previewUrl=null;
+$("reference").addEventListener("change",()=>{
+ const file=$("reference").files[0];
+ if(previewUrl)URL.revokeObjectURL(previewUrl);
+ previewUrl=null;
+ if(!file){$("preview").style.display="none";return}
+ if(file.size>6*1024*1024){$("error").textContent="A imagem deve ter no máximo 6 MB.";$("reference").value="";$("preview").style.display="none";return}
+ previewUrl=URL.createObjectURL(file);$("preview").src=previewUrl;$("preview").style.display="block";$("error").textContent="";
+});
+function fileAsBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(",")[1]);reader.onerror=()=>reject(new Error("Não consegui ler a imagem."));reader.readAsDataURL(file)})}
 $("go").addEventListener("click",async()=>{
- const text=$("request").value.trim();if(!text){$("error").textContent="Escreva sua ideia primeiro.";return}
+ const text=$("request").value.trim(),file=$("reference").files[0];
+ if(!text){$("error").textContent="Escreva sua ideia primeiro.";return}
+ if(file&&file.size>6*1024*1024){$("error").textContent="A imagem deve ter no máximo 6 MB.";return}
  $("go").disabled=true;$("status").textContent="Interpretando...";$("error").textContent="";$("output").hidden=true;
  try{
-  const res=await fetch("/api/prompt",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text,tool:$("tool").value})});
+  const body={text,tool:$("tool").value};
+  if(file)body.image={mime_type:file.type,data:await fileAsBase64(file)};
+  const res=await fetch("/api/prompt",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   const data=await res.json();if(!res.ok)throw new Error(data.error||"Não foi possível preparar o prompt.");
   const labels={ready:"Pronto para copiar",needs_clarification:"Precisa de um detalhe",unsupported:"Combinação não confirmada",partially_supported:"Parcialmente compatível"};
-  $("output").innerHTML=`<div class="result"><span class="badge">${esc(labels[data.status]||data.status)}</span><h2>${esc(data.task)}</h2><p class="muted">Ferramenta: ${esc(data.tool||"não definida")}</p>
-  ${data.clarifying_question?block("Pergunta",data.clarifying_question):""}
-  ${block("Prompt positivo",data.prompt_positive,true)}
-  ${block("Prompt negativo",data.prompt_negative,true)}
-  <div class="section"><h2>Configurações sugeridas</h2>${list(data.settings)}</div>
-  <div class="section"><h2>Suposições</h2>${list(data.assumptions)}</div>
-  <div class="section"><h2>Limitações e compatibilidade</h2>${list(data.limitations)}</div></div>`;
+  $("output").innerHTML='<div class="result"><span class="badge">'+esc(labels[data.status]||data.status)+'</span><h2>'+esc(data.task)+'</h2><p class="muted">Ferramenta: '+esc(data.tool||"não definida")+'</p>'+
+  (data.clarifying_question?block("Pergunta",data.clarifying_question):"")+
+  block("Prompt positivo",data.prompt_positive,true)+block("Prompt negativo",data.prompt_negative,true)+
+  '<div class="section"><h2>Configurações sugeridas</h2>'+list(data.settings)+'</div>'+
+  '<div class="section"><h2>Suposições</h2>'+list(data.assumptions)+'</div>'+
+  '<div class="section"><h2>Limitações e compatibilidade</h2>'+list(data.limitations)+'</div></div>';
   $("output").hidden=false;
  }catch(e){$("error").textContent=e.message}
  finally{$("go").disabled=false;$("status").textContent=""}

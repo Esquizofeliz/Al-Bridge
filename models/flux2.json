@@ -1,27 +1,13 @@
 {
   "id": "flux2",
-  "name": "FLUX.2 Klein 4B",
-  "purpose": "Geração e edição de imagens.",
-  "inputs": [
-    "texto",
-    "uma ou mais imagens de referência, conforme variante/workflow"
-  ],
-  "outputs": [
-    "imagem"
-  ],
-  "supported_tasks": [
-    "texto para imagem",
-    "edição de imagem com instruções textuais e referência visual",
-    "edição com múltiplas referências quando suportado pela variante"
-  ],
-  "unsupported_or_unconfirmed": [
-    "não é gerador nativo de áudio ou vídeo",
-    "não aceitar WAV como condicionamento de imagem sem workflow externo documentado"
-  ],
-  "prompt_guidance": [
-    "descrever sujeito, composição, cenário, iluminação, estilo e detalhes visuais",
-    "para edição, declarar claramente o que deve mudar e o que deve permanecer"
-  ],
-  "source": "Repositório oficial Black Forest Labs FLUX.2 consultado em 2026-11-11",
-  "license_note": "FLUX.2 Klein 4B está sob Apache-2.0 segundo o repositório oficial; outras variantes têm licenças diferentes. Conferir a variante exata."
+  "name": "FLUX.2 Klein 9B",
+  "variant": "klein-9b-distilled",
+  "purpose": "Geração de imagens a partir de texto e edição com uma ou mais imagens de referência.",
+  "inputs": ["texto", "uma ou mais imagens de referência conforme pipeline"],
+  "outputs": ["imagem"],
+  "supported_tasks": ["texto para imagem", "edição com uma imagem de referência", "edição com múltiplas imagens de referência"],
+  "unsupported_or_unconfirmed": ["não gera áudio ou vídeo", "não prometer execução adequada em 8 GB VRAM", "não confundir 9B distilled com 9B Base ou 9B KV"],
+  "prompt_guidance": ["descrever sujeito, ação, composição, cenário, luz, paleta e estilo", "na edição, separar o que muda do que deve permanecer", "atribuir função clara a cada referência"],
+  "source": "https://github.com/black-forest-labs/flux2 — consultado em 2026-11-12",
+  "license_note": "FLUX.2 Klein 9B usa FLUX Non-Commercial License. A licença do Klein 4B é diferente (Apache-2.0)."
 }
