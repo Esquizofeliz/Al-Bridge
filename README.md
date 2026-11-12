@@ -1,79 +1,57 @@
 # Esquizofeliz AI Bridge
 
-**Um engenheiro local de prompts.** O Bridge recebe uma descrição em português, interpreta a intenção com um modelo local e devolve prompts prontos para copiar. Ele **não gera nem executa** imagens, vídeos ou áudios.
+**Engenheiro local de prompts, não executor de mídia.** Recebe uma ideia em português, consulta uma biblioteca técnica versionada e devolve prompts/instruções para o usuário executar manualmente no software escolhido.
 
 ## Princípios
-
-- Local-first: sem APIs pagas ou serviços em nuvem.
-- O usuário controla a execução: o Bridge apenas prepara o texto.
-- O registro técnico é a fonte de verdade sobre capacidades e limitações.
-- O modelo de linguagem interpreta; não inventa suporte técnico.
-- Nenhum arquivo ou modelo do computador é alterado por este projeto.
+- Local-first: sem API paga, nuvem ou telemetria.
+- Ollama local como provedor de linguagem.
+- Documentação upstream como fonte de verdade; o LLM não deve inventar capacidades.
+- Nenhum workflow é enviado e nenhum modelo de geração é executado.
+- Imagem de referência opcional pode orientar a interpretação do pedido para qualquer ferramenta, mas é enviada somente ao Ollama local, nunca diretamente ao gerador.
 
 ## Requisitos
+- Python 3.10+; sem dependências Python externas.
+- Ollama com modelo compatível com a API /api/chat.
+- Para análise de imagem, o modelo configurado precisa ter visão e aceitar imagens no campo images.
+- FLUX.2 Klein 9B tem licença não comercial e pode exigir recursos acima dos disponíveis em GPUs de 8 GB.
 
-- Ubuntu/Linux, Python 3.10 ou superior.
-- Um servidor local compatível com a API OpenAI Chat Completions.
-- Configuração inicial sugerida para o ambiente conhecido: `http://127.0.0.1:8338/v1`, modelo `qwen3-8b`.
-- O servidor/modelo precisa estar iniciado separadamente.
-
-Não instala nem baixa modelos.
-
-## Iniciar
-
-```bash
-cd esquizofeliz-ai-bridge
-python3 app.py
-```
-
-Abra `http://127.0.0.1:8765`.
-
-Configurações opcionais por variáveis de ambiente:
-
-```bash
-BRIDGE_API_BASE=http://127.0.0.1:8338/v1
-BRIDGE_MODEL=qwen3-8b
+## Configuração
+Copie .env.example para .env e ajuste:
+```env
+BRIDGE_API_BASE=http://127.0.0.1:11434
+BRIDGE_MODEL=qwen3.5:9b-q4_K_M
 BRIDGE_API_KEY=
 BRIDGE_PORT=8765
 ```
+O Bridge carrega .env automaticamente. Não publique segredos.
 
-A chave é opcional e deve ser usada somente se o servidor local exigir autenticação. Não coloque chaves de serviços externos.
+## Executar
+```bash
+python3 app.py
+```
+Abra http://127.0.0.1:8765
 
-## O que a primeira versão faz
+## Ferramentas documentadas
+- FLUX.2 Klein 9B — texto-imagem e edição com uma ou mais referências, conforme o pipeline.
+- KugelAudio Open — texto-fala; vozes pré-codificadas; português com qualidade variável.
+- LTX-2.3 — pipelines locais específicos para T2V, I2V, A2Vid e tarefas especializadas.
 
-1. Recebe somente texto digitado.
-2. Consulta o catálogo local de capacidades.
-3. Pede ao modelo local um plano de prompt estruturado.
-4. Valida se a ferramenta escolhida possui suporte documentado para o tipo de tarefa.
-5. Exibe prompt positivo, negativo, parâmetros sugeridos e ressalvas.
-6. Não envia mídia, não executa workflows e não chama ferramentas de geração.
+Leia knowledge/SOURCES.md e knowledge/DOCUMENTATION_RULES.md antes de alterar capacidades.
 
-## Catálogo inicial
+## Imagem de referência
+A interface aceita PNG, JPEG ou WEBP de até 6 MB, independentemente da ferramenta selecionada. A imagem é enviada em base64 somente à API Ollama local configurada, para servir de contexto visual ao planejamento do prompt. Ela não é enviada ao FLUX, KugelAudio ou LTX pelo Bridge e não é armazenada em disco. Se o endpoint não suportar imagens, a requisição falha claramente; o Bridge não finge ter visto a referência.
 
-Os registros em `models/` são um ponto de partida conservador, baseado na documentação oficial consultada para este projeto. Verifique versões e workflows antes de atualizar as afirmações. Em especial:
+O suporte da ferramenta de destino continua específico:
+- FLUX.2 Klein 9B: edição com imagem(ns) depende do pipeline/checkpoint usado.
+- LTX-2.3: imagem é entrada em pipelines image-to-video compatíveis.
+- KugelAudio Open: não recebe imagem como entrada; uma imagem pode apenas contextualizar o texto/roteiro solicitado.
 
-- LTX-2.3: geração conjunta de áudio/vídeo e workflows específicos; não presumir que áudio externo arbitrário condicione vídeo.
-- FLUX.2: imagem a partir de texto e referências visuais; não é gerador de áudio/vídeo.
-- KugelAudio Open: texto para fala; a versão pública não deve ser tratada como clonagem livre a partir de qualquer WAV.
-- ComfyUI não está integrado para execução nesta versão.
-
-## Privacidade
-
-O texto digitado é enviado apenas ao endpoint local configurado. O aplicativo não possui telemetria, analytics ou chamadas remotas. Se você configurar um endpoint remoto, essa garantia deixa de valer.
+Quando a ferramenta aceitar imagem, anexe o arquivo original manualmente no software/pipeline de geração.
 
 ## Testes
-
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-## Próximos passos possíveis
-
-- Melhorar a cobertura de workflows por versão.
-- Adicionar exportação `.txt` e histórico local opt-in.
-- Criar perfis de prompt por ferramenta.
-- Incluir testes com prompts reais e avaliação manual.
-
-## Licença
-
-MIT. Consulte `LICENSE`.
+## Licenças
+O Bridge é MIT. Cada modelo, peso, nó customizado e checkpoint mantém seus próprios termos. Em particular, FLUX.2 Klein 9B é não comercial; não confundir com Klein 4B Apache-2.0.
