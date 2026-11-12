@@ -3,6 +3,7 @@
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 import base64
+import binascii
 import json
 import os
 import re
@@ -72,7 +73,7 @@ def ask_local_model(user_text, selected_tool, image=None):
         image_present=bool(image),
     )
     if image:
-        # Ollama /api/chat recebe imagens base64 no campo images da mensagem.
+        # A imagem serve apenas como contexto visual para o LLM local.
         messages[-1]["images"] = [image["data"]]
 
     payload = {
@@ -116,7 +117,6 @@ def ask_local_model(user_text, selected_tool, image=None):
     result = json.loads(content[first:last + 1])
     validate_result(result)
 
-    # A validação não delega ao LLM a escolha de uma ferramenta inexistente.
     returned_tool = result.get("tool")
     allowed_names = {item["name"] for item in CATALOG}
     allowed_ids = set(CATALOG_BY_ID)
@@ -130,11 +130,13 @@ def ask_local_model(user_text, selected_tool, image=None):
         )
     if image:
         result["assumptions"].append(
-            "A imagem foi encaminhada ao endpoint Ollama local para análise; "
-            "ela não foi enviada ao FLUX/ComfyUI."
+            "A imagem foi analisada somente pelo Ollama local como contexto visual "
+            "para elaborar o prompt da ferramenta selecionada."
         )
         result["limitations"].append(
-            "Anexe manualmente a imagem original ao pipeline de geração/edição."
+            "A imagem não foi enviada ao gerador. Se a ferramenta e o pipeline "
+            "escolhidos aceitarem imagem, anexe o arquivo original manualmente. "
+            "KugelAudio Open não recebe imagem como entrada."
         )
     return result
 
@@ -187,7 +189,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("A imagem deve ter no máximo 6 MB.")
                 try:
                     decoded = base64.b64decode(encoded, validate=True)
-                except (ValueError, base64.binascii.Error) as error:
+                except (ValueError, binascii.Error) as error:
                     raise ValueError("A imagem enviada não é base64 válida.") from error
                 if not decoded or len(decoded) > MAX_IMAGE_BYTES:
                     raise ValueError("A imagem deve ter entre 1 byte e 6 MB.")

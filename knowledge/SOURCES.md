@@ -18,13 +18,8 @@ Consulta desta revisão: 2026-11-12. Páginas upstream podem mudar.
 - Conditioning: https://github.com/Lightricks/LTX-2/blob/main/packages/ltx-pipelines/docs/conditioning.md
 - Pipeline selection: https://github.com/Lightricks/LTX-2/blob/main/packages/ltx-pipelines/docs/pipeline-selection.md
 
-## ComfyUI
-- Documentação: https://docs.comfy.org/
-- Repositório: https://github.com/Comfy-Org/ComfyUI
-- Servidor/API: https://github.com/Comfy-Org/ComfyUI/tree/master/server
-
 ## Ollama
 - Qwen3.5: https://ollama.com/library/qwen3.5
 - API Chat: https://github.com/ollama/ollama/blob/main/docs/api.md
 
-Capacidade upstream não garante que qualquer instalação local a tenha habilitada. Confirmar modelo e workflow reais.
+Capacidade upstream não garante que qualquer instalação local a tenha habilitada. Confirmar modelo, checkpoint e pipeline reais.

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10131a">
 <title>Esquizofeliz AI Bridge</title>
 <style>
 :root{color-scheme:dark;--bg:#10131a;--panel:#1a202b;--line:#303a49;--text:#edf2f7;--muted:#aab6c5;--accent:#80d6c2}
@@ -18,39 +19,57 @@ button:disabled{opacity:.5;cursor:wait}.hint,.muted{color:var(--muted);font-size
 pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#0e131a;border:1px solid var(--line);border-radius:9px;padding:13px;font:14px/1.5 ui-monospace,monospace}
 .copy{float:right;background:#344a55;color:white;padding:6px 10px;font-size:.85rem}
 ul{margin:6px 0;padding-left:22px}.badge{display:inline-block;padding:3px 9px;border-radius:99px;background:#263d3b;color:#a7f0dc;font-size:.85rem}
-#error{color:#ffb4a9}.footer{color:var(--muted);font-size:.85rem;margin:25px 0}#preview{max-width:220px;max-height:180px;display:none;margin-top:10px;border-radius:8px}
+#error{color:#ffb4a9;white-space:pre-wrap}.footer{color:var(--muted);font-size:.85rem;margin:25px 0}#preview{max-width:220px;max-height:180px;display:none;margin-top:10px;border-radius:8px}
+@media(max-width:600px){main{margin:22px auto}.panel,.result{padding:15px}#status{display:block;margin:8px 0 0}}
 </style>
 </head>
 <body><main>
 <h1 class="brand">Esquizofeliz AI Bridge</h1>
 <p class="sub">Você descreve a ideia. O Bridge prepara o prompt. A criação continua nas suas mãos.</p>
 <div class="panel">
-<label for="tool">Ferramenta desejada</label>
+<label for="tool">Modelo ou ferramenta desejada</label>
 <select id="tool"><option value="">Escolher automaticamente</option></select>
 <label for="request">O que você quer criar?</label>
 <textarea id="request" maxlength="12000" placeholder="Ex.: Quero uma cena cinematográfica de uma personagem caminhando por Tóquio à noite, sob chuva..."></textarea>
 <label for="reference">Imagem de referência (opcional)</label>
 <input id="reference" type="file" accept="image/png,image/jpeg,image/webp">
 <img id="preview" alt="Prévia da imagem de referência">
-<p class="hint">A imagem será analisada pelo Ollama local, se o modelo tiver visão. Ela não será enviada ao FLUX ou ao ComfyUI. Você deverá anexá-la manualmente ao gerador. PNG, JPEG ou WEBP; até 6 MB.</p>
-<button id="go">Preparar meu prompt</button><span id="status" role="status"></span>
+<p class="hint">A imagem pode orientar a interpretação do pedido para qualquer ferramenta selecionada. Ela é enviada somente ao Ollama local para análise visual; não é enviada diretamente ao FLUX, KugelAudio ou LTX. Quando a ferramenta escolhida aceitar imagem, anexe também o original manualmente no pipeline correspondente. PNG, JPEG ou WEBP; até 6 MB. O modelo Ollama precisa ter visão.</p>
+<button id="go" type="button">Preparar meu prompt</button><span id="status" role="status" aria-live="polite"></span>
 <p id="error" aria-live="polite"></p>
 </div>
 <div id="output" hidden></div>
 <p class="footer">Execução manual • Sem geração de mídia • Sem chamadas de nuvem pelo aplicativo</p>
 </main>
 <script>
+"use strict";
 const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;',"'":"&#39;"}[c]));
-function list(items){return Array.isArray(items)&&items.length?'<ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>':"<p class='muted'>Nenhum item informado.</p>"}
-function block(title,value,copy=false){return '<div class="section"><h2>'+esc(title)+(copy&&value?'<button class="copy" data-copy="'+encodeURIComponent(value)+'">Copiar</button>':"")+'</h2>'+(value?'<pre>'+esc(value)+'</pre>':"<p class='muted'>Não aplicável.</p>")+'</div>'}
-async function init(){try{const r=await fetch("/api/catalog");const items=await r.json();for(const item of items){const opt=document.createElement("option");opt.value=item.id;opt.textContent=item.name; $("tool").appendChild(opt)}}catch(e){}}
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let previewUrl=null;
+let copyValues=[];
+function list(items){return Array.isArray(items)&&items.length?'<ul>'+items.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>':"<p class='muted'>Nenhum item informado.</p>"}
+function block(title,value,copy=false){
+ const hasValue=typeof value==="string"&&value.length>0;
+ let button="";
+ if(copy&&hasValue){const index=copyValues.push(value)-1;button='<button type="button" class="copy" data-copy-index="'+index+'">Copiar</button>'}
+ return '<div class="section"><h2>'+esc(title)+button+'</h2>'+(hasValue?'<pre>'+esc(value)+'</pre>':"<p class='muted'>Não aplicável.</p>")+'</div>';
+}
+async function init(){
+ try{
+  const r=await fetch("/api/catalog",{cache:"no-store"});
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  const items=await r.json();
+  if(!Array.isArray(items))throw new Error("Catálogo inválido.");
+  for(const item of items){if(!item||!item.id||!item.name)continue;const opt=document.createElement("option");opt.value=item.id;opt.textContent=item.name;$("tool").appendChild(opt)}
+ }catch(e){$("error").textContent="Não consegui carregar o catálogo de modelos. Atualize a página. ("+e.message+")"}
+}
 $("reference").addEventListener("change",()=>{
  const file=$("reference").files[0];
  if(previewUrl)URL.revokeObjectURL(previewUrl);
  previewUrl=null;
+ $("preview").removeAttribute("src");
  if(!file){$("preview").style.display="none";return}
+ if(!["image/png","image/jpeg","image/webp"].includes(file.type)){ $("error").textContent="Use uma imagem PNG, JPEG ou WEBP.";$("reference").value="";$("preview").style.display="none";return}
  if(file.size>6*1024*1024){$("error").textContent="A imagem deve ter no máximo 6 MB.";$("reference").value="";$("preview").style.display="none";return}
  previewUrl=URL.createObjectURL(file);$("preview").src=previewUrl;$("preview").style.display="block";$("error").textContent="";
 });
@@ -59,13 +78,16 @@ $("go").addEventListener("click",async()=>{
  const text=$("request").value.trim(),file=$("reference").files[0];
  if(!text){$("error").textContent="Escreva sua ideia primeiro.";return}
  if(file&&file.size>6*1024*1024){$("error").textContent="A imagem deve ter no máximo 6 MB.";return}
+ if(file&&!["image/png","image/jpeg","image/webp"].includes(file.type)){$("error").textContent="Use uma imagem PNG, JPEG ou WEBP.";return}
  $("go").disabled=true;$("status").textContent="Interpretando...";$("error").textContent="";$("output").hidden=true;
  try{
   const body={text,tool:$("tool").value};
   if(file)body.image={mime_type:file.type,data:await fileAsBase64(file)};
   const res=await fetch("/api/prompt",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  const data=await res.json();if(!res.ok)throw new Error(data.error||"Não foi possível preparar o prompt.");
+  let data;try{data=await res.json()}catch(_){throw new Error("O servidor retornou uma resposta inválida. Confira o terminal do Bridge.")}
+  if(!res.ok)throw new Error(data.error||"Não foi possível preparar o prompt.");
   const labels={ready:"Pronto para copiar",needs_clarification:"Precisa de um detalhe",unsupported:"Combinação não confirmada",partially_supported:"Parcialmente compatível"};
+  copyValues=[];
   $("output").innerHTML='<div class="result"><span class="badge">'+esc(labels[data.status]||data.status)+'</span><h2>'+esc(data.task)+'</h2><p class="muted">Ferramenta: '+esc(data.tool||"não definida")+'</p>'+
   (data.clarifying_question?block("Pergunta",data.clarifying_question):"")+
   block("Prompt positivo",data.prompt_positive,true)+block("Prompt negativo",data.prompt_negative,true)+
@@ -76,6 +98,10 @@ $("go").addEventListener("click",async()=>{
  }catch(e){$("error").textContent=e.message}
  finally{$("go").disabled=false;$("status").textContent=""}
 });
-$("output").addEventListener("click",async e=>{const b=e.target.closest("[data-copy]");if(!b)return;try{await navigator.clipboard.writeText(decodeURIComponent(b.dataset.copy));b.textContent="Copiado!";setTimeout(()=>b.textContent="Copiar",1200)}catch(e){b.textContent="Falha ao copiar"}});
+$("output").addEventListener("click",async e=>{
+ const b=e.target.closest("[data-copy-index]");if(!b)return;
+ const value=copyValues[Number(b.dataset.copyIndex)];if(typeof value!=="string")return;
+ try{await navigator.clipboard.writeText(value);b.textContent="Copiado!";setTimeout(()=>b.textContent="Copiar",1200)}catch(_){b.textContent="Falha ao copiar"}
+});
 init();
 </script></body></html>
